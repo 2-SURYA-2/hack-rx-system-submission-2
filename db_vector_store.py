@@ -13,13 +13,24 @@ model = SentenceTransformer("intfloat/e5-small-v2")
 
 # === PostgreSQL Connection ===
 def get_db_connection():
-    return psycopg2.connect(
-        host=DB_HOST,
-        port=DB_PORT,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        dbname=DB_NAME
-    )
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        # Append sslmode if not present
+        if "sslmode" not in db_url:
+            if "?" in db_url:
+                db_url += "&sslmode=require"
+            else:
+                db_url += "?sslmode=require"
+        return psycopg2.connect(db_url)
+    else:
+        return psycopg2.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            dbname=DB_NAME,
+            sslmode="require"  # Required for Render PostgreSQL
+        )
 
 # === DB Initialization ===
 def init_db():
